@@ -76,7 +76,9 @@ import org.kiji.schema.KijiRowData
 @ApiAudience.Public
 @ApiStability.Experimental
 @Inheritance.Sealed
-class KijiSlice[T] private[express] (val cells: Seq[Cell[T]]) extends Serializable {
+class KijiSlice[T] private[express] (val cells: Seq[Cell[T]]) extends Serializable
+  with Iterable[Cell[T]]{
+  @transient val iterator: Iterator[Cell[T]] = cells.iterator
   /**
    * Gets the first cell, as decided by the ordering of the slice.
    *
@@ -150,7 +152,8 @@ class KijiSlice[T] private[express] (val cells: Seq[Cell[T]]) extends Serializab
    * @return a map from keys to KijiSlices, such that every cell that gets mapped to the same key by
    *    the discriminator function is in the same KijiSlice.
    */
-  def groupBy[K](fn: (Cell[T] => K)) :Map[K, KijiSlice[T]] = {
+
+  override def groupBy[K](fn: (Cell[T] => K)) :Map[K, KijiSlice[T]] = {
     val pairs: Map[K, Seq[Cell[T]]] = cells.groupBy(fn)
     val makeNewSlice: (((K, Seq[Cell[T]])) => (K, KijiSlice[T])) =
     { case (key, valueCells) =>
@@ -174,7 +177,8 @@ class KijiSlice[T] private[express] (val cells: Seq[Cell[T]]) extends Serializab
    *
    * @return the number of underlying [[org.kiji.express.Cell]]s.
    */
-  val size: Int = cells.size
+
+  override val size: Int = cells.size
 
   /**
    * Gets the value of the underlying [[org.kiji.express.Cell]] as a Double

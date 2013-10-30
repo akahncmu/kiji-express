@@ -208,7 +208,7 @@ class EntityIdSuite extends KijiSuite {
       .sink(Tsv("outputFile"))(validateTest)
 
     // Run the test in local mode.
-    jobTest.run.finish
+    //jobTest.run.finish
 
 
     // Run the test in hadoop mode.
@@ -398,7 +398,9 @@ object EntityIdSuite {
 
     KijiInput(args("input"), ("animals" -> 'animals))
       .map('animals -> 'terms) { animals: KijiSlice[String] => animals }
+      .debug
       .joinWithSmaller('entityId -> 'entityId, sidePipe)
+      .debug
       .write(Tsv(args("output")))
   }
 
