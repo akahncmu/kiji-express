@@ -24,7 +24,7 @@ import cascading.tuple.Fields
 import org.kiji.annotations.ApiAudience
 import org.kiji.annotations.ApiStability
 import org.kiji.annotations.Inheritance
-import org.kiji.express.KijiSlice
+import org.kiji.express.Cell
 import org.kiji.express.modeling.Extractor
 import org.kiji.express.util.Tuples
 
@@ -47,7 +47,7 @@ import org.kiji.express.util.Tuples
 @ApiStability.Experimental
 @Inheritance.Sealed
 sealed abstract class SelectorExtractor[R](
-    val selectFn: KijiSlice[Any] => R)
+    val selectFn: Stream[Cell[Any]]  => R)
     extends Extractor {
   override val extractFn = extract(Fields.ALL -> Fields.RESULTS) { data: Any =>
     data match {
@@ -55,12 +55,12 @@ sealed abstract class SelectorExtractor[R](
         val returnValues: Seq[R] = tuple
             .productIterator
             .toSeq
-            .asInstanceOf[Seq[KijiSlice[Any]]]
-            .map { slice: KijiSlice[Any] => selectFn(slice) }
+            .asInstanceOf[Seq[Stream[Cell[Any]]]]
+            .map { slice: Stream[Cell[Any]] => selectFn(slice) }
 
         Tuples.seqToTuple(returnValues)
       }
-      case slice: KijiSlice[_] => selectFn(slice.asInstanceOf[KijiSlice[Any]])
+      case slice: Stream[Cell[_]] => selectFn(slice.asInstanceOf[Stream[Cell[Any]]])
     }
   }
 }
@@ -74,7 +74,7 @@ sealed abstract class SelectorExtractor[R](
 final class FirstValueExtractor
     extends SelectorExtractor[Any](FirstValueExtractor.selectFirstValue)
 private[express] object FirstValueExtractor {
-  def selectFirstValue(slice: KijiSlice[Any]): Any = slice.getFirstValue
+  def selectFirstValue(slice: Stream[Cell[Any]]): Any = slice.head.datum
 }
 
 /**
@@ -86,7 +86,7 @@ private[express] object FirstValueExtractor {
 final class LastValueExtractor
     extends SelectorExtractor[Any](LastValueExtractor.selectLastValue)
 private[express] object LastValueExtractor {
-  def selectLastValue(slice: KijiSlice[Any]): Any = slice.getLastValue
+  def selectLastValue(slice: Stream[Cell[Any]]): Any = slice.last.datum
 }
 
 /**
@@ -99,9 +99,9 @@ private[express] object LastValueExtractor {
 final class SliceExtractor
     extends SelectorExtractor[Seq[Any]](SliceExtractor.selectSlice)
 private[express] object SliceExtractor {
-  def selectSlice(slice: KijiSlice[Any]): Seq[Any] = {
+  def selectSlice(slice: Stream[Cell[Any]]): Seq[Any] = {
     slice
-        .cells
-        .map { cell => cell.datum }
+        .toSeq
+        .map ( _.datum )
   }
 }

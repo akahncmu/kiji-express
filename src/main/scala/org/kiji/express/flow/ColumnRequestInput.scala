@@ -28,7 +28,6 @@ import org.apache.hadoop.hbase.HConstants
 import org.kiji.annotations.ApiAudience
 import org.kiji.annotations.ApiStability
 import org.kiji.express.Cell
-import org.kiji.express.KijiSlice
 import org.kiji.schema.KijiColumnName
 import org.kiji.schema.KijiInvalidNameException
 import org.kiji.schema.filter.KijiColumnFilter
@@ -67,7 +66,7 @@ private[express] trait ColumnRequestInput {
    *
    * By default (or if this field is set to `None`), rows with missing values are ignored.
    */
-  private[express] def default: Option[KijiSlice[_]]
+  private[express] def default: Option[Stream[Cell[_]]]
 
   /**
    * Specifies the maximum number of cells to maintain in memory when paging through a column.
@@ -117,7 +116,7 @@ final case class QualifiedColumnRequestInput (
     val qualifier: String,
     val maxVersions: Int = latest,
     val filter: Option[KijiColumnFilter] = None,
-    val default: Option[KijiSlice[_]] = None,
+    val default: Option[Stream[Cell[_]]] = None,
     val pageSize: Option[Int] = None,
     val avroClass: Option[Class[_ <: SpecificRecord]] = None
 ) extends ColumnRequestInput {
@@ -132,29 +131,29 @@ final case class QualifiedColumnRequestInput (
    *     `KijiSlice.`
    */
   private[express] def replaceMissingWith[T](datum: T): QualifiedColumnRequestInput = {
-    val default = new KijiSlice(List(Cell(family, qualifier, HConstants.LATEST_TIMESTAMP, datum)))
+    val default =  List(Cell(family, qualifier, HConstants.LATEST_TIMESTAMP, datum)).toStream
     copy(default=Some(default))
   }
 
   /** See previous comment. */
   private[express] def replaceMissingWithVersioned[T](
       version: Long, datum: T): QualifiedColumnRequestInput = {
-    val default = new KijiSlice(List(Cell( family, qualifier, version, datum)))
+    val default =  List(Cell( family, qualifier, version, datum)).toStream
     copy(default=Some(default))
   }
 
   /** See previous comment. */
   private[express] def replaceMissingWith[T](data: Seq[T]): QualifiedColumnRequestInput = {
-    val default = new KijiSlice(data.map { datum: T =>
-        Cell(family, qualifier, HConstants.LATEST_TIMESTAMP, datum) })
+    val default =  data.map { datum: T =>
+        Cell(family, qualifier, HConstants.LATEST_TIMESTAMP, datum) }.toStream
     copy(default=Some(default))
   }
 
   /** See previous comment. */
   private[express] def replaceMissingWithVersioned[T](
       versionedData: Seq[(Long, T)]): QualifiedColumnRequestInput = {
-    val default = new KijiSlice(versionedData.map { case (version: Long, datum: Any) =>
-        Cell(family, qualifier, version, datum) })
+    val default =  versionedData.map { case (version: Long, datum: Any) =>
+        Cell(family, qualifier, version, datum) }.toStream
     copy(default=Some(default))
   }
 
@@ -184,7 +183,7 @@ final case class ColumnFamilyRequestInput (
     val family: String,
     val maxVersions: Int = latest,
     val filter: Option[KijiColumnFilter] = None,
-    val default: Option[KijiSlice[_]] = None,
+    val default: Option[Stream[Cell[_]]] = None,
     val pageSize: Option[Int] = None,
     val avroClass: Option[Class[_ <: SpecificRecord]] = None
 ) extends ColumnRequestInput {
@@ -203,30 +202,30 @@ final case class ColumnFamilyRequestInput (
    */
   private[express] def replaceMissingWith[T](
       qualifier: String, datum: T): ColumnFamilyRequestInput = {
-    val default = new KijiSlice(List(Cell( family, qualifier, HConstants.LATEST_TIMESTAMP, datum)))
+    val default =  List(Cell( family, qualifier, HConstants.LATEST_TIMESTAMP, datum)).toStream
     copy(default=Some(default))
   }
 
   /** See previous comment. */
   private[express] def replaceMissingWithVersioned[T](
       qualifier: String, version: Long, datum: T): ColumnFamilyRequestInput = {
-    val default = new KijiSlice(List(Cell( family, qualifier, version, datum)))
+    val default =  List(Cell( family, qualifier, version, datum)).toStream
     copy(default=Some(default))
   }
 
   /** See previous comment. */
   private[express] def replaceMissingWith[T](data: Seq[(String, T)]): ColumnFamilyRequestInput = {
-    val default = new KijiSlice(data.map { case (qualifier: String, datum: Any) =>
-                Cell(family, qualifier, HConstants.LATEST_TIMESTAMP, datum) })
+    val default =  data.map { case (qualifier: String, datum: Any) =>
+                Cell(family, qualifier, HConstants.LATEST_TIMESTAMP, datum) }.toStream
     copy(default=Some(default))
   }
 
   /** See previous comment. */
   private[express] def replaceMissingWithVersioned[T](
       versionedData: Seq[(String, Long, T)]): ColumnFamilyRequestInput = {
-    val default = new KijiSlice(versionedData.map {
+    val default =  versionedData.map {
       case (qualifier: String, version: Long, datum: Any)
-        => Cell(family, qualifier, version, datum) })
+        => Cell(family, qualifier, version, datum) }.toStream
       copy(default=Some(default))
   }
 
@@ -267,7 +266,7 @@ object ColumnRequestInput {
     columnName: String,
     maxVersions: Int = latest,
     filter: Option[KijiColumnFilter] = None,
-    default: Option[KijiSlice[_]] = None,
+    default: Option[Stream[Cell[_]]] = None,
     pageSize: Option[Int] = None,
     avroClass: Option[Class[_ <: SpecificRecord]] = None
   ): ColumnRequestInput = {

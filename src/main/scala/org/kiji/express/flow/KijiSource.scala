@@ -58,7 +58,6 @@ import org.kiji.annotations.ApiAudience
 import org.kiji.annotations.ApiStability
 import org.kiji.express.Cell
 import org.kiji.express.EntityId
-import org.kiji.express.KijiSlice
 import org.kiji.express.flow.framework.KijiScheme
 import org.kiji.express.flow.framework.KijiTap
 import org.kiji.express.flow.framework.LocalKijiScheme
@@ -331,8 +330,7 @@ object KijiSource {
             // Get the timeline to be written.
             val cells: Seq[Cell[Any]] = tupleEntry
               .getObject(field)
-              .asInstanceOf[KijiSlice[Any]]
-              .cells
+              .asInstanceOf[Stream[Cell[Any]]]
 
             // Write the timeline to the table.
             cells.map { cell: Cell[Any] =>

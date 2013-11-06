@@ -55,11 +55,11 @@ class WriterSchemaSuite extends KijiSuite {
       ( "1", "two" ))
 
     // Validates the output buffer contains the records written with the default schema.
-    def validateWrite(outputBuffer: Buffer[(EntityId, KijiSlice[AvroRecord])]): Unit = {
+    def validateWrite(outputBuffer: Buffer[(EntityId,Stream[Cell[AvroRecord]])]): Unit = {
       val outMap = outputBuffer.toMap
 
-      val record1 = outMap(EntityId("one")).getFirstValue()
-      val record2 = outMap(EntityId("two")).getFirstValue()
+      val record1 = outMap(EntityId("one")).head.datum
+      val record2 = outMap(EntityId("two")).head.datum
 
       assert(
         "word_one" === record1("contained_string").asString)
@@ -106,11 +106,11 @@ class WriterSchemaSuite extends KijiSuite {
       ( "1", "two" ))
 
     // Validates the output buffer contains the records written with the default schema.
-    def validateWrite(outputBuffer: Buffer[(EntityId, KijiSlice[AvroRecord])]): Unit = {
+    def validateWrite(outputBuffer: Buffer[(EntityId, Stream[Cell[AvroRecord]])]): Unit = {
       val outMap = outputBuffer.toMap
 
-      val record1 = outMap(EntityId("one")).getFirstValue()
-      val record2 = outMap(EntityId("two")).getFirstValue()
+      val record1 = outMap(EntityId("one")).head.datum
+      val record2 = outMap(EntityId("two")).head.datum
 
       assert(
         "word_one" === record1("contained_string").asString)
@@ -150,11 +150,11 @@ class WriterSchemaSuite extends KijiSuite {
       ( "1", "two" ))
 
     // Validates the output buffer contains the records written with the default schema.
-    def validateWrite(outputBuffer: Buffer[(EntityId, KijiSlice[AvroRecord])]): Unit = {
+    def validateWrite(outputBuffer: Buffer[(EntityId, Stream[Cell[AvroRecord]])]): Unit = {
       val outMap = outputBuffer.toMap
 
-      val record1 = outMap(EntityId("one")).getFirstValue()
-      val record2 = outMap(EntityId("two")).getFirstValue()
+      val record1 = outMap(EntityId("one")).head.datum
+      val record2 = outMap(EntityId("two")).head.datum
 
       assert(
         "word_one" === record1("contained_string").asString)
@@ -194,11 +194,11 @@ class WriterSchemaSuite extends KijiSuite {
       ( "1", "two" ))
 
     // Validates the output buffer contains the records written with the default schema.
-    def validateWrite(outputBuffer: Buffer[(EntityId, KijiSlice[AvroRecord])]): Unit = {
+    def validateWrite(outputBuffer: Buffer[(EntityId, Stream[Cell[AvroRecord]])]): Unit = {
       val outMap = outputBuffer.toMap
 
-      val record1 = outMap(EntityId("one")).getFirstValue()
-      val record2 = outMap(EntityId("two")).getFirstValue()
+      val record1 = outMap(EntityId("one")).head.datum
+      val record2 = outMap(EntityId("two")).head.datum
 
       assert(
         "word_one" === record1("contained_string").asString)

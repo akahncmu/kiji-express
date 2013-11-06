@@ -47,9 +47,9 @@ trait KijiSuite
    * @tparam T type of the values in the returned slice.
    * @return an empty slice.
    */
-  def missing[T](): KijiSlice[T] = {
+  def missing[T](): Stream[Cell[T]] = {
     val emptyList = List[Cell[T]]()
-    new KijiSlice[T](emptyList)
+    emptyList.toStream
   }
 
   /**
@@ -60,7 +60,7 @@ trait KijiSuite
    * @param values pairs of (version, value) to build the slice with.
    * @return a slice containing the specified cells.
    */
-  def slice[T](columnName: String, values: (Long, T)*): KijiSlice[T] = {
+  def slice[T](columnName: String, values: (Long, T)*): Stream[Cell[T]] = {
     val columnComponents: Array[String] = columnName.split(":")
     require(columnComponents.length == 2, "The column name must be of the form" +
       " \"family:qualifier\", with no extra colons. ")
@@ -68,7 +68,7 @@ trait KijiSuite
       val (version, value) = input
       Cell(columnComponents(0), columnComponents(1), version, value)
     }.toSeq
-    new KijiSlice[T](cells)
+     cells.toStream
   }
 
   /**
@@ -79,7 +79,7 @@ trait KijiSuite
    * @param values are triples of (qualifier, version, value) to build the slice with.
    * @return a slice containing the specified cells.
    */
-  def mapSlice[T](columnName: String, values: (String, Long, T)*): KijiSlice[T] = {
+  def mapSlice[T](columnName: String, values: (String, Long, T)*):Stream[Cell[T]] = {
     val columnComponents: Array[String] = columnName.split(":")
     require(columnComponents.length == 1, "The column name must be of the form" +
       " \"family\", with no extra colons. ")
@@ -87,7 +87,7 @@ trait KijiSuite
       val (qualifier, version, value) = input
       Cell(columnComponents(0), qualifier, version, value)
     }.toSeq
-    new KijiSlice[T](cells)
+     cells.toStream
   }
 
   /**

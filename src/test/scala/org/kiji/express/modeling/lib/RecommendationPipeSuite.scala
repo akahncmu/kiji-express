@@ -31,7 +31,7 @@ import org.apache.hadoop.hbase.HBaseConfiguration
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
-import org.kiji.express.KijiSlice
+import org.kiji.express.Cell
 import org.kiji.express.KijiSuite
 import org.kiji.express.flow.KijiInput
 import org.kiji.express.flow.KijiJob
@@ -83,7 +83,7 @@ class RecommendationPipeSuite extends KijiSuite {
     class PrepareItemsetsJob(args: Args) extends KijiJob(args) {
       KijiInput(args("input"), "family:column" -> 'slice)
         .map('slice -> 'order) {
-          slice: KijiSlice[String] => slice.getFirstValue().split(",").map(_.trim).toList
+          slice: Stream[Cell[String]] => slice.head.datum.split(",").map(_.trim).toStream
         }
         .prepareItemSets[String]('order -> 'itemset, 2, 2)
         .write(TextLine(args("output")))
@@ -120,7 +120,7 @@ class RecommendationPipeSuite extends KijiSuite {
     class JoinWithGroupCountJob(args: Args) extends KijiJob(args) {
       KijiInput(args("input"), "family:column" -> 'slice)
         .flatMap('slice -> 'product) {
-          slice: KijiSlice[String] => slice.getFirstValue().split(",").map(_.trim)
+          slice: Stream[Cell[String]] => slice.head.datum.split(",").map(_.trim)
         }
         .joinWithGroupCount('product -> 'count)
         .write(TextLine(args("output")))
@@ -161,7 +161,7 @@ class RecommendationPipeSuite extends KijiSuite {
     class FrequentItemsetFinderJob(args: Args) extends KijiJob(args) {
       KijiInput(args("input"), "family:column" -> 'slice)
           .map('slice -> 'order) {
-            slice: KijiSlice[String] => slice.getFirstValue().split(",").map(_.trim).toList
+            slice: Stream[Cell[String]]  => slice.head.datum.split(",").map(_.trim).toList
           }
           .prepareItemSets[String]('order -> 'itemset, 2, 2)
           .filterBySupport('itemset -> 'support, None, Some(3.0), 'norm, 0.5)
@@ -189,7 +189,7 @@ class RecommendationPipeSuite extends KijiSuite {
 
       KijiInput(args("input"), "family:column" -> 'slice)
           .map('slice -> 'order) {
-            slice: KijiSlice[String] => slice.getFirstValue().split(",").map(_.trim).toList
+            slice: Stream[Cell[String]]  => slice.head.datum.split(",").map(_.trim).toList
           }
         .prepareItemSets[String]('order -> 'itemset, 2, 2)
         .filterBySupport('itemset -> 'support, Some(totalOrders), None, 'norm, 0.5)

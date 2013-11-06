@@ -25,18 +25,17 @@ import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 
 import org.kiji.express.Cell
-import org.kiji.express.KijiSlice
 
 @RunWith(classOf[JUnitRunner])
 class SelectorExtractorSuite extends FunSuite {
-  val slice1 = new KijiSlice(Seq(
+  val slice1 =  Seq(
       new Cell("family", "qualifier", 3L, "bar1"),
       new Cell("family", "qualifier", 2L, "baz1"),
-      new Cell("family", "qualifier", 1L, "foo1")))
-  val slice2 = new KijiSlice(Seq(
+      new Cell("family", "qualifier", 1L, "foo1"))
+  val slice2 =  Seq(
       new Cell("family", "qualifier", 3L, "bar2"),
       new Cell("family", "qualifier", 2L, "baz2"),
-      new Cell("family", "qualifier", 1L, "foo2")))
+      new Cell("family", "qualifier", 1L, "foo2"))
   val firstValueExtractor = new FirstValueExtractor
   val lastValueExtractor = new LastValueExtractor
   val sliceExtractor = new SliceExtractor

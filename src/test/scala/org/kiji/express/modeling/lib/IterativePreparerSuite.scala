@@ -25,7 +25,7 @@ import org.apache.hadoop.hbase.HBaseConfiguration
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
-import org.kiji.express.KijiSlice
+import org.kiji.express.Cell
 import org.kiji.express.KijiSuite
 import org.kiji.express.modeling.Preparer
 import org.kiji.express.modeling.config.ExpressColumnRequest
@@ -153,9 +153,9 @@ object IterativePreparerSuite {
     class IterativeJob(input: Source, output: Source) extends PreparerJob {
       input
           .read
-          .map('word -> 'cleanWord) { words: KijiSlice[String] =>
+          .map('word -> 'cleanWord) { words:  Stream[Cell[String]] =>
              words
-                 .getFirstValue()
+                 .head.datum
                  .toString
                  .toLowerCase
           }

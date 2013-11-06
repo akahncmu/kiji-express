@@ -26,8 +26,8 @@ import org.apache.hadoop.hbase.HBaseConfiguration
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
+import org.kiji.express.Cell
 import org.kiji.express.EntityId
-import org.kiji.express.KijiSlice
 import org.kiji.express.KijiSuite
 import org.kiji.express.modeling.Preparer
 import org.kiji.express.modeling.Trainer
@@ -488,8 +488,8 @@ object ModelExecutorSuite {
     class WordCountJob(input: Map[String, Source], output: Map[String, Source]) extends
         PreparerJob {
       input("input")
-        .flatMapTo('word -> 'countedWord) { slice: KijiSlice[String] =>
-            slice.cells.map { cell => cell.datum } }
+        .flatMapTo('word -> 'countedWord) { slice: Stream[Cell[String]] =>
+            slice.map { cell => cell.datum } }
         .groupBy('countedWord) { _.size }
         .map('countedWord -> 'entityId) { countedWord: String => EntityId(countedWord) }
         .map('size -> 'size) { size: Long => size.toString }
@@ -506,8 +506,8 @@ object ModelExecutorSuite {
     class WordCountJob(input: Map[String, Source], output: Map[String,
         Source]) extends TrainerJob {
       input("input")
-        .flatMapTo('word -> 'countedWord) { slice: KijiSlice[String] =>
-          slice.cells.map { cell => cell.datum }
+        .flatMapTo('word -> 'countedWord) { slice:  Stream[Cell[String]] =>
+          slice.map { cell => cell.datum }
         }
         .groupBy('countedWord) { _.size }
         .map('countedWord -> 'entityId) { countedWord: String => EntityId(countedWord) }
@@ -525,8 +525,8 @@ object ModelExecutorSuite {
     class AverageTrainerJob(input: Map[String, Source], output: Map[String, Source]) extends
         TrainerJob {
       input("input")
-        .flatMapTo('word -> 'countedWord) { slice: KijiSlice[String] =>
-          slice.cells.map { cell => cell.datum }
+        .flatMapTo('word -> 'countedWord) { slice:  Stream[Cell[String]] =>
+          slice.map { cell => cell.datum }
         }
         .mapTo('countedWord -> 'number) { countedWord: String => countedWord.toLong }
         .groupAll(_.average('number))

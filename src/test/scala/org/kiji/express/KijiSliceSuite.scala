@@ -20,6 +20,7 @@
 package org.kiji.express
 
 import org.junit.runner.RunWith
+import org.kiji.express.util.CellMathUtil
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.matchers.ShouldMatchers
@@ -46,37 +47,37 @@ class KijiSliceSuite extends FunSuite with ShouldMatchers {
       mapCell0)
 
   test("KijiSlice can be instantiated and maintain order.") {
-    val slice: KijiSlice[Long] = new KijiSlice[Long](cellSeq)
-    assert(slice.getFirst() == cell7)
-    assert(slice.getLast() == cell0)
-    assert(slice.cells == cellSeq)
+    val slice: Stream[Cell[Long]] =  cellSeq.toStream
+    assert(slice.head == cell7)
+    assert(slice.last == cell0)
+    assert(slice == cellSeq.toStream)
   }
 
   test("KijiSlice can order by time.") {
-    val slice: KijiSlice[Long] = new KijiSlice[Long](cellSeq)
+    val slice: Stream[Cell[Long]] =  cellSeq.toStream
     // Reverse the ordering.
-    val reversedSlice: KijiSlice[Long] = slice.orderChronologically()
-    assert(reversedSlice.getFirst() == cell0)
-    assert(reversedSlice.getLast() == cell7)
+    val reversedSlice: Stream[Cell[Long]] = slice.sortBy(_.version)
+    assert(reversedSlice.head == cell0)
+    assert(reversedSlice.last == cell7)
 
-    val reReversedSlice: KijiSlice[Long] = reversedSlice.orderReverseChronologically()
-    assert(reReversedSlice.getFirst() == cell7)
-    assert(reReversedSlice.getLast() == cell0)
-    assert(reReversedSlice.cells == cellSeq)
+    val reReversedSlice: Stream[Cell[Long]] = reversedSlice.sortBy(-_.version)
+    assert(reReversedSlice.head == cell7)
+    assert(reReversedSlice.last == cell0)
+    assert(reReversedSlice == cellSeq)
   }
 
   test("KijiSlice can order by qualifier.") {
-    val slice: KijiSlice[Long] = new KijiSlice[Long](mapCellSeq)
+    val slice: Stream[Cell[Long]]  =  mapCellSeq.toStream
     // Order alphabetically, by qualifier.
-    val alphabeticalSlice: KijiSlice[Long] = slice.orderByQualifier()
-    assert(alphabeticalSlice.getFirst() == mapCell1)
-    assert(alphabeticalSlice.getLast() == mapCell4)
+    val alphabeticalSlice: Stream[Cell[Long]]  = slice.sortBy(_.qualifier)
+    assert(alphabeticalSlice.head == mapCell1)
+    assert(alphabeticalSlice.last == mapCell4)
   }
 
   test("KijiSlice can groupBy qualifier.") {
-    val slice: KijiSlice[Long] = new KijiSlice[Long](mapCellSeq)
+    val slice: Stream[Cell[Long]] =  mapCellSeq.toStream
     // Group by qualifiers.
-    val groupedSlices: Map[String, KijiSlice[Long]] = slice.groupByQualifier()
+    val groupedSlices = slice.groupBy(_.qualifier)
     assert(3 == groupedSlices.size)
     val sliceA = groupedSlices.get("a").get
     assert(2 == sliceA.size)
@@ -87,14 +88,13 @@ class KijiSliceSuite extends FunSuite with ShouldMatchers {
   }
 
   test("KijiSlice can groupBy datum.") {
-    val slice: KijiSlice[Long] = new KijiSlice[Long](mapCellSeq)
+    val slice: Stream[Cell[Long]]  = mapCellSeq.toStream
     // Group by the datum contained in the cell.
-    val groupedSlices: Map[Long, KijiSlice[Long]] = slice.groupBy[Long]( { cell: Cell[Long] =>
-      cell.datum } )
+    val groupedSlices = slice.groupBy(_.datum)
     assert(3 == groupedSlices.size)
-    val slice0 = groupedSlices.get(0L).get.orderReverseChronologically()
+    val slice0 = groupedSlices.get(0L).get
     assert(3 == slice0.size)
-    assert(4L == slice0.getFirst().version)
+    assert(4L == slice0.head.version)
     val slice1 = groupedSlices.get(1L).get
     assert(1 == slice1.size)
     val slice3 = groupedSlices.get(3L).get
@@ -103,52 +103,43 @@ class KijiSliceSuite extends FunSuite with ShouldMatchers {
 
   test("KijiSlice should properly sum simple types")
   {
-    val slice: KijiSlice[Long] = new KijiSlice[Long](mapCellSeq)
-    assert(4.0 == slice.sum( { cell: Cell[Long] => cell.datum } ))
-    assert(4.0 == slice.sum)
+    val slice: Stream[Cell[Long]]  =  mapCellSeq.toStream
+    assert(4 == CellMathUtil.sum(slice))
   }
 
   test("KijiSlice should properly compute the squared sum of simple types")
   {
-    val slice: KijiSlice[Long] = new KijiSlice[Long](mapCellSeq)
-    assert(10.0 == slice.sumSquared( { cell: Cell[Long] => cell.datum } ))
-    assert(10.0 == slice.sumSquared)
+    val slice: Stream[Cell[Long]]  =  mapCellSeq.toStream
+    assert(10.0 == CellMathUtil.sumSquares(slice))
   }
 
   test("KijiSlice should properly compute the average of simple types")
   {
-    val slice: KijiSlice[Long] = new KijiSlice[Long](mapCellSeq)
-    slice.avg should equal(0.8)
-    slice.avg( { cell: Cell[Long] => cell.datum } ) should equal (0.8)
+    val slice:Stream[Cell[Long]] =  mapCellSeq.toStream
+   assert(.8 == CellMathUtil.mean(slice))
   }
 
   test("KijiSlice should properly compute the standard deviation of simple types")
   {
-    val slice: KijiSlice[Long] = new KijiSlice[Long](mapCellSeq)
-    slice.stddev( { cell: Cell[Long] => cell.datum } ) should be (1.16619 plusOrMinus 0.1)
-    slice.stddev should be (1.16619 plusOrMinus 0.1)
+    val slice: Stream[Cell[Long]] =  mapCellSeq.toStream
+    CellMathUtil.stddev(slice) should be (1.16619 plusOrMinus 0.1)
   }
 
   test("KijiSlice should properly compute the variance of simple types")
   {
-    val slice: KijiSlice[Long] = new KijiSlice[Long](mapCellSeq)
-    slice.variance( { cell: Cell[Long] => cell.datum } ) should be (1.36 plusOrMinus 0.1)
-    slice.variance should be (1.36 plusOrMinus 0.1)
+    val slice: Stream[Cell[Long]] = mapCellSeq.toStream
+    CellMathUtil.variance(slice) should be (1.36 plusOrMinus 0.1)
   }
 
   test("KijiSlice should properly find the minimum of simple types")
   {
-    val slice: KijiSlice[Long] = new KijiSlice[Long](mapCellSeq)
-    val minSort = Ordering.by { cell: Cell[Long] => cell.datum }
-    assert(mapCell0.datum == slice.orderBy(minSort).getFirstValue)
-    assert(0.0 == slice.min)
+    val slice: Stream[Cell[Long]] = mapCellSeq.toStream
+    assert(0.0 == CellMathUtil.min(slice))
   }
 
   test("KijiSlice should properly find the maximum of simple types")
   {
-    val slice: KijiSlice[Long] = new KijiSlice[Long](mapCellSeq)
-    val maxSort = Ordering.by { cell: Cell[Long] => cell.datum }
-    assert(mapCell3.datum == slice.orderBy(maxSort).getLastValue)
-    assert(3.0 == slice.max)
+    val slice: Stream[Cell[Long]] = mapCellSeq.toStream
+    assert(3.0 == CellMathUtil.max(slice))
   }
 }

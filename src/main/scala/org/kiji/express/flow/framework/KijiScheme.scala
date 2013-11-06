@@ -47,9 +47,8 @@ import org.slf4j.LoggerFactory
 
 import org.kiji.annotations.ApiAudience
 import org.kiji.annotations.ApiStability
+import org.kiji.express.Cell
 import org.kiji.express.EntityId
-import org.kiji.express.KijiSlice
-import org.kiji.express.PagedKijiSlice
 import org.kiji.express.flow._
 import org.kiji.express.util.AvroUtil
 import org.kiji.express.util.Resources.doAndRelease
@@ -58,6 +57,7 @@ import org.kiji.mapreduce.framework.KijiConfKeys
 import org.kiji.schema.ColumnVersionIterator
 import org.kiji.schema.EntityIdFactory
 import org.kiji.schema.Kiji
+import org.kiji.schema.KijiCell
 import org.kiji.schema.KijiColumnName
 import org.kiji.schema.KijiDataRequest
 import org.kiji.schema.KijiDataRequestBuilder
@@ -416,11 +416,19 @@ private[express] object KijiScheme {
     def rowToTupleColumnFamily(cf: ColumnFamilyRequestInput): Unit = {
       if (row.containsColumn(cf.family)) {
         cf.pageSize match {
-          case None => result.add(KijiSlice(row, cf.family))
+          case None => {
+            val stream: Stream[Cell[_]] = row
+              .iterator(cf.family)
+              .asScala
+              .toStream
+              .map({ kijiCell: KijiCell[_] => Cell(kijiCell) })
+            result.add(stream)
+          }
           case Some(pageSize) => {
-            val slice = PagedKijiSlice(cf.family,
-                new MapFamilyVersionIterator(row, cf.family, qualifierPageSize, pageSize))
-            result.add(slice)
+            val slice = new MapFamilyVersionIterator(row, cf.family, qualifierPageSize, pageSize).asScala.toStream
+            val stream: Stream[Cell[_]] = slice
+              .map({m:MapFamilyVersionIterator.Entry[_] => Cell(cf.family, m.getQualifier, m.getTimestamp, AvroUtil.decodeGenericFromJava(m.getValue))})
+            result.add(stream)
           }
         }
       } else {
@@ -432,12 +440,20 @@ private[express] object KijiScheme {
     def rowToTupleQualifiedColumn(qc: QualifiedColumnRequestInput): Unit = {
       if (row.containsColumn(qc.family, qc.qualifier)) {
         qc.pageSize match {
-          case None =>
-              result.add(KijiSlice(row, qc.family, qc.qualifier))
+          case None => {
+            val stream: Stream[Cell[_]] = row
+              .iterator(qc.family, qc.qualifier)
+              .asScala
+              .toStream
+              .map({ kijiCell: KijiCell[_] => Cell(kijiCell) })
+            result.add(stream)
+          }
           case Some(pageSize) => {
-            val slice = PagedKijiSlice(qc.family, qc.qualifier,
-                new ColumnVersionIterator(row, qc.family, qc.qualifier, pageSize))
-            result.add(slice)
+            val slice = new ColumnVersionIterator(row, qc.family, qc.qualifier, pageSize).asScala.toStream
+            val stream: Stream[Cell[_]] = slice
+             .map { m: java.util.Map.Entry[java.lang.Long,_] => Cell(qc.family, qc.qualifier, m.getKey, AvroUtil.decodeGenericFromJava(m.getValue)) }
+              //.map({m:Map.Entry[_] => Cell[Any](qc.family, qc.qualifier, m.getTimestamp, m.getValue) })
+            result.add(stream)
           }
         }
       } else {

@@ -26,16 +26,13 @@ import org.apache.hadoop.hbase.HBaseConfiguration
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
-import org.kiji.express.AvroEnum
-import org.kiji.express.AvroRecord
-import org.kiji.express.EntityId
-import org.kiji.express.KijiSlice
-import org.kiji.express.KijiSuite
+import org.kiji.express._
 import org.kiji.express.flow.All
 import org.kiji.express.flow.ColumnRequestInput
 import org.kiji.express.flow.ColumnRequestOutput
 import org.kiji.express.util.GenericCellSpecs
 import org.kiji.schema.EntityIdFactory
+import org.kiji.express.AvroEnum
 
 @RunWith(classOf[JUnitRunner])
 class KijiSchemeSuite extends KijiSuite {
@@ -88,7 +85,7 @@ class KijiSchemeSuite extends KijiSuite {
         configuration)
     assert(readValue.isDefined)
 
-    val readRecord = readValue.get.getObject(1).asInstanceOf[KijiSlice[_]].getFirstValue()
+    val readRecord = readValue.get.getObject(1).asInstanceOf[Stream[Cell[_]]].head.datum
     assert(record === readRecord)
 
     reader.close()

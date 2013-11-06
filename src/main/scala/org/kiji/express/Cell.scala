@@ -24,6 +24,7 @@ import org.kiji.annotations.ApiAudience
 import org.kiji.annotations.ApiStability
 import org.kiji.express.util.AvroUtil
 import org.kiji.schema.KijiCell
+import scala.annotation.implicitNotFound
 
 /**
  * A cell from a Kiji table containing some datum, addressed by a family, qualifier,
@@ -38,8 +39,7 @@ import org.kiji.schema.KijiCell
 @ApiAudience.Public
 @ApiStability.Experimental
 @Inheritance.Sealed
-case class
-Cell[T] private[express] (family: String,
+case class Cell[T] private[express] (family: String,
     qualifier: String,
     version: Long,
     datum: T)
@@ -64,4 +64,19 @@ object Cell {
         cell.getTimestamp.longValue,
         AvroUtil.decodeGenericFromJava(cell.getData).asInstanceOf[T])
   }
+  @implicitNotFound("KijiSlice cells not Orderable.")
+  implicit def valueOrder[T](implicit order: Ordering[T]): Ordering[Cell[T]] = {
+    Ordering.by { cell: Cell[T] => cell.datum }
+  }
+
+  def versionOrder[T]: Ordering[Cell[T]] = {
+    Ordering.by { cell: Cell[T] => cell.version }
+  }
+
+  def timestampOrder[T] = versionOrder
+
+  def qualifierOrder[T]: Ordering[Cell[T]] =  {
+    Ordering.by { cell: Cell[T] => (cell.family,cell.qualifier)}
+  }
+
 }

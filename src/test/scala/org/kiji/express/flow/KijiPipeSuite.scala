@@ -40,7 +40,7 @@ class KijiPipeSuite extends KijiSuite {
   val layout: KijiTableLayout = layout(KijiTableLayouts.SIMPLE_TWO_COLUMNS)
 
   /** Input tuples to use for word count tests. */
-  def wordCountInput(uri: String): List[(EntityId, KijiSlice[String])] = {
+  def wordCountInput(uri: String): List[(EntityId, Stream[Cell[String]])] = {
     List(
       ( EntityId("row01"), slice("family:column1", (1L, "hello")) ),
       ( EntityId("row02"), slice("family:column1", (2L, "hello")) ),
@@ -75,8 +75,8 @@ class KijiPipeSuite extends KijiSuite {
     // Setup input to bind values from the "family:column1" column to the symbol 'word.
     KijiInput(uri, "family:column1" -> 'word)
     // Sanitize the word.
-    .map('word -> 'cleanword) { words: KijiSlice[String] =>
-      words.getFirstValue()
+    .map('word -> 'cleanword) { words: Stream[Cell[String]] =>
+      words.head.datum
           .toString()
           .toLowerCase()
     }
@@ -141,9 +141,9 @@ class KijiPipeSuite extends KijiSuite {
 
     val packingInput: List[(String, String)] = List(( "0", "1 eid1 word1" ))
 
-    def validatePacking(outputBuffer: Buffer[(EntityId, KijiSlice[AvroRecord])]) {
+    def validatePacking(outputBuffer: Buffer[(EntityId,Stream[Cell[AvroRecord]])]) {
       // Get the first record from the first KijiSlice.
-      val outputRecord = outputBuffer(0)._2.getFirstValue
+      val outputRecord = outputBuffer(0)._2.head.datum
       assert("1 eid1 word1" === outputRecord("line").asString)
       assert(12 === outputRecord("length").asInt)
     }
@@ -182,7 +182,7 @@ class KijiPipeSuite extends KijiSuite {
     specificRecord.setHashSize(13)
     specificRecord.setSuppressKeyMaterialization(true)
 
-    def unpackingInput(uri: String): List[(EntityId, KijiSlice[HashSpec])] = {
+    def unpackingInput(uri: String): List[(EntityId, Stream[Cell[HashSpec]])] = {
       List((EntityId("row01"), slice("family:column3", (10L, specificRecord))))
     }
 
@@ -194,7 +194,7 @@ class KijiPipeSuite extends KijiSuite {
 
     def unpackTupleJob(args: Args): Job = {
       val cascadingPipe = KijiInput(args("input"), "family:column3" -> 'slice)
-          .map('slice -> 'record) { slice: KijiSlice[AvroRecord] => slice.getFirstValue }
+          .map('slice -> 'record) { slice: Stream[Cell[AvroRecord]] => slice.head.datum }
       new KijiPipe(cascadingPipe)
           .unpackAvro('record -> ('hashtype, 'hashsize, 'suppress))
           .project('hashtype, 'hashsize, 'suppress)

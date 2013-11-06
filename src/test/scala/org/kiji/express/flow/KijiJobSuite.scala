@@ -32,8 +32,8 @@ import org.kiji.express.AvroBoolean
 import org.kiji.express.AvroEnum
 import org.kiji.express.AvroInt
 import org.kiji.express.AvroRecord
+import org.kiji.express.Cell
 import org.kiji.express.EntityId
-import org.kiji.express.KijiSlice
 import org.kiji.express.KijiSuite
 import org.kiji.express.util.Resources.doAndRelease
 import org.kiji.schema.KijiTable
@@ -85,7 +85,7 @@ class KijiJobSuite extends KijiSuite {
     specificRecord.setHashSize(13)
     specificRecord.setSuppressKeyMaterialization(true)
 
-    val unpackingInput: List[(EntityId, KijiSlice[HashSpec])] =
+    val unpackingInput: List[(EntityId, Stream[Cell[HashSpec]])] =
       List((EntityId("row01"), slice("family:column3", (10L, specificRecord))))
 
     def validatePacking(outputBuffer: Buffer[(String, String, String)]) {
@@ -96,7 +96,7 @@ class KijiJobSuite extends KijiSuite {
 
     class UnpackTupleJob(args: Args) extends KijiJob(args) {
       KijiInput(args("input"), "family:column3" -> 'slice)
-          .map('slice -> 'record) { slice: KijiSlice[AvroRecord] => slice.getFirstValue }
+          .map('slice -> 'record) { slice: Stream[Cell[AvroRecord]] => slice.head.datum }
           .unpackAvro('record -> ('hashtype, 'hashsize, 'suppress))
           .project('hashtype, 'hashsize, 'suppress)
           .write(Tsv(args("output")))

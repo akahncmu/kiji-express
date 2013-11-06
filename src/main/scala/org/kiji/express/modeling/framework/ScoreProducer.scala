@@ -27,7 +27,6 @@ import org.kiji.annotations.ApiAudience
 import org.kiji.annotations.ApiStability
 import org.kiji.annotations.Inheritance
 import org.kiji.express.EntityId
-import org.kiji.express.KijiSlice
 import org.kiji.express.flow.framework.KijiScheme
 import org.kiji.express.modeling.ExtractFn
 import org.kiji.express.modeling.Extractor
@@ -248,9 +247,9 @@ final class ScoreProducer
 
             // Build a slice from each column within the row.
             if (columnName.isFullyQualified) {
-              KijiSlice[Any](row, columnName.getFamily, columnName.getQualifier)
+              row.iterator(columnName.getFamily, columnName.getQualifier).asScala.toStream
             } else {
-              KijiSlice[Any](row, columnName.getFamily)
+              row.iterator(columnName.getFamily).asScala.toStream
             }
           }
         }

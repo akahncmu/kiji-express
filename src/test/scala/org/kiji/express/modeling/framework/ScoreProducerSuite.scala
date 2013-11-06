@@ -23,8 +23,8 @@ import org.apache.hadoop.fs.Path
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
+import org.kiji.express.Cell
 import org.kiji.express.EntityId
-import org.kiji.express.KijiSlice
 import org.kiji.express.KijiSuite
 import org.kiji.express.modeling.Extractor
 import org.kiji.express.modeling.KeyValueStore
@@ -419,8 +419,8 @@ class ScoreProducerSuite
 
 object ScoreProducerSuite {
   class DoublingExtractor extends Extractor {
-    override val extractFn = extract('field -> 'feature) { field: KijiSlice[String] =>
-      val str: String = field.getFirstValue
+    override val extractFn = extract('field -> 'feature) { field: Stream[Cell[String]] =>
+      val str: String = field.head.datum
       val sideData: KeyValueStore[Int, String] = keyValueStore("side_data")
 
       str + str + sideData(1)
@@ -434,17 +434,17 @@ object ScoreProducerSuite {
   }
 
   class KijiSliceScorer extends Scorer {
-    override val scoreFn = score('field) { field: KijiSlice[String] =>
-      field.getFirstValue
+    override val scoreFn = score('field) { field:  Stream[Cell[String]] =>
+      field.head.datum
     }
   }
 
   class TwoArgDoublingExtractor extends Extractor {
     override val extractFn =
-        extract(('i1, 'i2) -> ('x1, 'x2)) { input: (KijiSlice[String], KijiSlice[String]) =>
+        extract(('i1, 'i2) -> ('x1, 'x2)) { input: ( Stream[Cell[String]], Stream[Cell[String]]) =>
           val (i1, i2) = input
 
-          (i1.getFirstValue + i1.getFirstValue, i2.getFirstValue + i2.getFirstValue)
+          (i1.head.datum + i1.head.datum, i2.head.datum + i2.head.datum)
         }
   }
 

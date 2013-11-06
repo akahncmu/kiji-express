@@ -28,7 +28,6 @@ import org.apache.hadoop.hbase.HConstants
 import org.kiji.annotations.ApiAudience
 import org.kiji.annotations.ApiStability
 import org.kiji.express.Cell
-import org.kiji.express.KijiSlice
 import org.kiji.schema.KijiColumnName
 import org.kiji.schema.KijiInvalidNameException
 import org.kiji.schema.filter.KijiColumnFilter

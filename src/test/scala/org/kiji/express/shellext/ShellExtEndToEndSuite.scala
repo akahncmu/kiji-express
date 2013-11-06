@@ -26,7 +26,7 @@ import com.google.common.io.Files
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
-import org.kiji.express.KijiSlice
+import org.kiji.express.Cell
 import org.kiji.express.modeling.Extractor
 import org.kiji.express.modeling.Scorer
 import org.kiji.express.modeling.config.ExpressColumnRequest
@@ -143,8 +143,8 @@ class ShellExtEndToEnd extends ShellExtSuite {
 
 object ShellExtEndToEndSuite {
   class DoublingExtractor extends Extractor {
-    override val extractFn = extract('field -> 'feature) { field: KijiSlice[String] =>
-      val str: String = field.getFirstValue
+    override val extractFn = extract('field -> 'feature) { field: Stream[Cell[String]] =>
+      val str: String = field.head.datum
       str + str
     }
   }
